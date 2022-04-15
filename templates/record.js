@@ -55,7 +55,7 @@ window.recorder = {
 	start() {
 		window.recorder.runner = setInterval(function save() {
 			const session = window.recorder.session.get();
-			fetch('{{ .URL }}/record', {
+			fetch('{{ .URL }}/sessions', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(Object.assign({}, { events: window.recorder.events }, session)),

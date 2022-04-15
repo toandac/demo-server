@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
 	"github.com/urfave/cli/v2"
 )
@@ -39,6 +40,7 @@ func run(c *cli.Context) error {
 	}
 
 	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},

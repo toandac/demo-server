@@ -12,7 +12,7 @@
 				<div class="col">
 					<nav aria-label="breadcrumb">
 						<ol class="breadcrumb">
-							<li class="breadcrumb-item"><a href="/">Record</a></li>
+							<li class="breadcrumb-item"><a href="/">Sessions</a></li>
 							<li class="breadcrumb-item active" aria-current="page">Replay</li>
 						</ol>
 					</nav>
@@ -33,7 +33,7 @@
 		</div>
 		<script type="application/javascript" src="https://cdn.jsdelivr.net/npm/rrweb-player@latest/dist/index.js" ></script>
 		<script type="application/javascript">
-			fetch('/api/v1/records/{{ .ID }}', {
+			fetch('/api/v1/sessions/{{ .ID }}', {
 				method: 'GET',
 			})
 			.then(res => res.json())
