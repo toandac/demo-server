@@ -24,7 +24,7 @@ func NewEventRepo(influx *database.InfluxDB) repository.EventRepo {
 
 func (e *EventRepoImpl) Insert(record models.Record) error {
 	for _, elem := range record.Events {
-		p := influxdb2.NewPointWithMeasurement("test3").
+		p := influxdb2.NewPointWithMeasurement("test5").
 			AddTag("clientID", record.Client.ClientID).
 			AddTag("sessionID", record.ID).
 			AddTag("userID", record.User.ID).
@@ -53,12 +53,15 @@ func (e *EventRepoImpl) Insert(record models.Record) error {
 func (e *EventRepoImpl) Query(id string) (models.Record, error) {
 	var record models.Record
 	var event models.Events
-	// var events []string
+
 	queryAPI := e.influx.Client.QueryAPI("tanda_organization")
 
-	query := `from(bucket: "records")
+	query := fmt.Sprintf(`from(bucket: "records")
 	|> range(start: -1d)
-	|> filter(fn: (r) => r["_measurement"] == "test3")`
+	|> filter(fn: (r) => r["_measurement"] == "test5")
+	|> filter(fn: (r) => r["sessionID"] == "%s")`, id)
+
+	// fmt.Println(query)
 
 	// get QueryTableResult
 	result, err := queryAPI.Query(context.Background(), query)

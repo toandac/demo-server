@@ -80,7 +80,7 @@ func (rc *RecordHandle) RenderRecordScript(w http.ResponseWriter, r *http.Reques
 func (rc *RecordHandle) RenderRecordPlayer(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	var record models.Record
+	// var record models.Record
 
 	// if err := rc.RecordRepo.Get(id, &record); err != nil {
 	// 	log.Println(err)
@@ -88,9 +88,14 @@ func (rc *RecordHandle) RenderRecordPlayer(w http.ResponseWriter, r *http.Reques
 	// 	return
 	// }
 
+	record, err := rc.EventRepo.Query(id)
+	if err != nil {
+		log.Println(err)
+	}
+
 	tmplPlayerHTML := template.Must(template.ParseFiles("templates/session_by_id.html"))
 
-	err := tmplPlayerHTML.Execute(w, struct {
+	err = tmplPlayerHTML.Execute(w, struct {
 		ID     string
 		Record models.Record
 	}{
