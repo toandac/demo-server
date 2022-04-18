@@ -3,6 +3,7 @@ package models
 import "time"
 
 type Client struct {
+	ClientID  string `json:"client_id"`
 	UserAgent string `json:"userAgent"`
 	OS        string `json:"os"`
 	Browser   string `json:"browser"`
@@ -10,13 +11,12 @@ type Client struct {
 }
 
 type Record struct {
-	ID        string            `json:"id" bow:"key"`
-	Events    []Events          `json:"events"`
-	Meta      map[string]string `json:"meta"`
-	User      User              `json:"user"`
-	Client    Client            `json:"client"`
-	ClientID  string            `json:"client_id"`
-	UpdatedAt time.Time         `json:"updatedAt"`
+	ID        string    `json:"id" bow:"key"`
+	Events    []Events  `json:"events"`
+	User      User      `json:"user"`
+	Client    Client    `json:"client"`
+	ClientID  string    `json:"client_id"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type Events struct {

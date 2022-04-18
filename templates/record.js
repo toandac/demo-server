@@ -37,12 +37,6 @@ window.recorder = {
 		window.recorder.session.save(session)
 		return window.recorder;
 	},
-	setMeta: function(meta = {}) {
-		const session = window.recorder.session.get();
-		session.meta = meta;
-		window.recorder.session.save(session)
-		return window.recorder;
-	},
 	setClientId(id) {
 		const session = window.recorder.session.get();
 		session.clientId = id;

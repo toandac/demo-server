@@ -7,7 +7,6 @@ import (
 	"demo-server/router"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 
 	"github.com/go-chi/chi"
@@ -17,26 +16,27 @@ import (
 )
 
 func run(c *cli.Context) error {
-	// influx := &database.InfluxDB{
-	// 	URL:    "http://localhost:8086",
-	// 	Token:  "162L5asvhPfFeE3hp4EWxT8Z6XXkNfzsh4XQ-R6XunRXrnYfJnd_AOlQ-dDyxcmC3OCQm829pbuWf_QNfgJOvA==",
-	// 	Bucket: "events_bucket",
-	// }
-	// influx.NewInfluxDB()
-	// defer influx.Close()
-
-	dbDSN, err := url.Parse(c.String("db-dsn"))
-	if err != nil {
-		log.Println(err)
+	influx := &database.InfluxDB{
+		URL:    "http://localhost:8086",
+		Token:  "162L5asvhPfFeE3hp4EWxT8Z6XXkNfzsh4XQ-R6XunRXrnYfJnd_AOlQ-dDyxcmC3OCQm829pbuWf_QNfgJOvA==",
+		Bucket: "records",
 	}
+	influx.NewInfluxDB()
+	defer influx.Close()
 
-	badger := &database.BadgerDB{}
-	badger.NewBadgerDB(dbDSN)
-	defer badger.Close()
+	// dbDSN, err := url.Parse(c.String("db-dsn"))
+	// if err != nil {
+	// 	log.Println(err)
+	// }
+
+	// badger := &database.BadgerDB{}
+	// badger.NewBadgerDB(dbDSN)
+	// defer badger.Close()
 
 	recordHandle := handle.RecordHandle{
-		RecordRepo: repoimpl.NewRecordRepo(badger),
-		URL:        c.String("service-url"),
+		// RecordRepo: repoimpl.NewRecordRepo(badger),
+		EventRepo: repoimpl.NewEventRepo(influx),
+		URL:       c.String("service-url"),
 	}
 
 	r := chi.NewRouter()
@@ -61,7 +61,7 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "service-url", Value: "http://localhost:3000"},
 			&cli.StringFlag{Name: "address", Value: "127.0.0.1"},
-			&cli.StringFlag{Name: "db-dsn", Value: "badger:///tmp/badgerdb_1.3"},
+			// &cli.StringFlag{Name: "db-dsn", Value: "badger:///tmp/badgerdb_1.3"},
 			&cli.StringFlag{Name: "port", Value: "3000"},
 		},
 		Action: run,

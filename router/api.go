@@ -12,7 +12,7 @@ type API struct {
 }
 
 func (api *API) SetupRouter() {
-	api.Chi.Get("/", api.RecordHandle.RendersRecordsList)
+	// api.Chi.Get("/", api.RecordHandle.RendersRecordsList)
 	api.Chi.Post("/sessions", api.RecordHandle.SaveRecord)
 	api.Chi.Get("/sessions/{id}", api.RecordHandle.RenderRecordPlayer)
 	api.Chi.Get("/api/v1/sessions/{id}", api.RecordHandle.GetAllRecordByID)
