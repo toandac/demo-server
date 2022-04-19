@@ -1,18 +1,17 @@
 package handle
 
 import (
-	"demo-server/models"
-	"demo-server/repository"
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 	"text/template"
 	"time"
 
+	"demo-server/models"
+	"demo-server/repository"
+
 	"github.com/go-chi/chi"
 	"github.com/mssola/user_agent"
-	"github.com/zippoxer/bow"
 )
 
 type RecordHandle struct {
@@ -28,47 +27,32 @@ func (rc *RecordHandle) SaveRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var rec models.Record
-	if err := rc.RecordRepo.Get(req.ID, &rec); err != nil {
-		if !errors.Is(err, bow.ErrNotFound) {
-			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
+	var record models.Record
 
 	ua := user_agent.New(r.UserAgent())
 
-	rec.ID = req.ID
-	rec.Events = append(rec.Events, req.Events...)
-	rec.User = req.User
-	rec.Meta = req.Meta
-	rec.UpdatedAt = time.Now()
+	record.ID = req.ID
+	record.Events = append(record.Events, req.Events...)
+	record.User = req.User
+	record.UpdatedAt = time.Now().Format("02/01/2006, 15:04")
 
 	browserName, browserVersion := ua.Browser()
-	rec.Client = models.Client{
+	record.Client = models.Client{
 		UserAgent: r.UserAgent(),
 		OS:        ua.OS(),
 		Browser:   browserName,
 		Version:   browserVersion,
 	}
 
-	if err := rc.RecordRepo.Put(rec); err != nil {
+	err := rc.RecordRepo.Insert(record)
+	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
 func (rc *RecordHandle) RenderRecordScript(w http.ResponseWriter, r *http.Request) {
-	// tmplRecorder, err := template.New("recorder").Parse(rrwebRecord)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	http.Error(w, err.Error(), http.StatusNotFound)
-	// 	return
-	// }
 	tmplRecorder := template.Must(template.ParseFiles("templates/record.js"))
 
 	err := tmplRecorder.Execute(w, struct{ URL string }{URL: rc.URL})
@@ -82,10 +66,9 @@ func (rc *RecordHandle) RenderRecordScript(w http.ResponseWriter, r *http.Reques
 
 func (rc *RecordHandle) RenderRecordPlayer(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-
 	var record models.Record
 
-	if err := rc.RecordRepo.Get(id, &record); err != nil {
+	if err := rc.RecordRepo.Query(id, &record); err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -111,7 +94,14 @@ func (rc *RecordHandle) RenderRecordPlayer(w http.ResponseWriter, r *http.Reques
 func (rc *RecordHandle) RendersRecordsList(w http.ResponseWriter, r *http.Request) {
 	var record models.Record
 
-	records, err := rc.RecordRepo.Iter(record)
+	listID, err := rc.RecordRepo.QueryAllSessionID()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	records, err := rc.RecordRepo.QueryAll(listID, record)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -140,7 +130,7 @@ func (rc *RecordHandle) GetAllRecordByID(w http.ResponseWriter, r *http.Request)
 	id := chi.URLParam(r, "id")
 	var record models.Record
 
-	if err := rc.RecordRepo.Get(id, &record); err != nil {
+	if err := rc.RecordRepo.Query(id, &record); err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

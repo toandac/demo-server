@@ -1,22 +1,19 @@
 package models
 
-import "time"
-
 type Client struct {
-	UserAgent string `json:"userAgent"`
+	ClientID  string `json:"client_id"`
+	UserAgent string `json:"user_agent"`
 	OS        string `json:"os"`
 	Browser   string `json:"browser"`
 	Version   string `json:"version"`
 }
 
 type Record struct {
-	ID        string            `json:"id" bow:"key"`
-	Events    []Events          `json:"events"`
-	Meta      map[string]string `json:"meta"`
-	User      User              `json:"user"`
-	Client    Client            `json:"client"`
-	ClientID  string            `json:"client_id"`
-	UpdatedAt time.Time         `json:"updatedAt"`
+	ID        string   `json:"id"`
+	Events    []Events `json:"events"`
+	User      User     `json:"user"`
+	Client    Client   `json:"client"`
+	UpdatedAt string   `json:"updated_at"`
 }
 
 type Events struct {
