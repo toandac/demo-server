@@ -5,10 +5,12 @@ import (
 )
 
 type InfluxDB struct {
-	Client influxdb2.Client
-	URL    string
-	Token  string
-	Bucket string
+	Client       influxdb2.Client
+	URL          string
+	Token        string
+	Bucket       string
+	Measurement  string
+	Organization string
 }
 
 func (influx *InfluxDB) NewInfluxDB() {

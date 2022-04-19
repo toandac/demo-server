@@ -1,13 +1,14 @@
 package main
 
 import (
+	"log"
+	"net/http"
+	"os"
+
 	"demo-server/database"
 	"demo-server/handle"
 	repoimpl "demo-server/repository/repo_impl"
 	"demo-server/router"
-	"log"
-	"net/http"
-	"os"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -17,26 +18,18 @@ import (
 
 func run(c *cli.Context) error {
 	influx := &database.InfluxDB{
-		URL:    "http://localhost:8086",
-		Token:  "162L5asvhPfFeE3hp4EWxT8Z6XXkNfzsh4XQ-R6XunRXrnYfJnd_AOlQ-dDyxcmC3OCQm829pbuWf_QNfgJOvA==",
-		Bucket: "records",
+		URL:          c.String("influx-url"),
+		Token:        c.String("influx-token"),
+		Bucket:       c.String("influx-bucket"),
+		Measurement:  c.String("influx-measurement"),
+		Organization: c.String("influx-organization"),
 	}
 	influx.NewInfluxDB()
 	defer influx.Close()
 
-	// dbDSN, err := url.Parse(c.String("db-dsn"))
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-
-	// badger := &database.BadgerDB{}
-	// badger.NewBadgerDB(dbDSN)
-	// defer badger.Close()
-
-	recordHandle := handle.RecordHandle{
-		// RecordRepo: repoimpl.NewRecordRepo(badger),
-		EventRepo: repoimpl.NewEventRepo(influx),
-		URL:       c.String("service-url"),
+	handle := handle.RecordHandle{
+		RecordRepo: repoimpl.NewRecordRepo(influx),
+		URL:        c.String("service-url"),
 	}
 
 	r := chi.NewRouter()
@@ -49,7 +42,7 @@ func run(c *cli.Context) error {
 		}))
 	api := router.API{
 		Chi:          r,
-		RecordHandle: recordHandle,
+		RecordHandle: handle,
 	}
 	api.SetupRouter()
 
@@ -61,8 +54,13 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "service-url", Value: "http://localhost:3000"},
 			&cli.StringFlag{Name: "address", Value: "127.0.0.1"},
-			// &cli.StringFlag{Name: "db-dsn", Value: "badger:///tmp/badgerdb_1.3"},
 			&cli.StringFlag{Name: "port", Value: "3000"},
+
+			&cli.StringFlag{Name: "influx-url", Value: "http://localhost:8086"},
+			&cli.StringFlag{Name: "influx-token", Value: "162L5asvhPfFeE3hp4EWxT8Z6XXkNfzsh4XQ-R6XunRXrnYfJnd_AOlQ-dDyxcmC3OCQm829pbuWf_QNfgJOvA=="},
+			&cli.StringFlag{Name: "influx-bucket", Value: "records"},
+			&cli.StringFlag{Name: "influx-measurement", Value: "test"},
+			&cli.StringFlag{Name: "influx-organization", Value: "tanda_organization"},
 		},
 		Action: run,
 	}

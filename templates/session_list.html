@@ -21,13 +21,8 @@
 				<a href="/sessions/{{ .ID }}" class="list-group-item list-group-item-action">
 					<div class="d-flex w-100 justify-content-between">
 						<h5 class="mb-2 mt-1"><span class="badge bg-secondary">{{ .User.ID }}</span> {{ .User.Name }} </h5>
-						<small class="text-muted">{{ .UpdatedAt.Format "Jan 02, 2006 15:04 UTC"  }}</small>
+						<small class="text-muted">{{ .UpdatedAt  }}</small>
 					</div>
-					<p class="mb-1">
-					{{ range $k, $v := .Meta }}
-						<span class="badge bg-primary">{{ $k }} = {{ $v }}</span>
-					{{ end }}
-					</p>
 				</a>
 			{{ end }}
 			</ul>
