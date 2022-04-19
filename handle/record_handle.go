@@ -68,7 +68,7 @@ func (rc *RecordHandle) RenderRecordPlayer(w http.ResponseWriter, r *http.Reques
 	id := chi.URLParam(r, "id")
 	var record models.Record
 
-	if err := rc.RecordRepo.Query(id, &record); err != nil {
+	if err := rc.RecordRepo.QueryRecordByID(id, &record); err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -101,7 +101,7 @@ func (rc *RecordHandle) RendersRecordsList(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	records, err := rc.RecordRepo.QueryAll(listID, record)
+	records, err := rc.RecordRepo.QueryAllRecord(listID, record)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -130,7 +130,7 @@ func (rc *RecordHandle) GetAllRecordByID(w http.ResponseWriter, r *http.Request)
 	id := chi.URLParam(r, "id")
 	var record models.Record
 
-	if err := rc.RecordRepo.Query(id, &record); err != nil {
+	if err := rc.RecordRepo.QueryRecordByID(id, &record); err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
