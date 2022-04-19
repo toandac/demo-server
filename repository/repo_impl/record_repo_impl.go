@@ -64,7 +64,7 @@ func (r *RecordRepoImpl) Insert(record models.Record) error {
 	return nil
 }
 
-func (r *RecordRepoImpl) Query(id string, record *models.Record) error {
+func (r *RecordRepoImpl) QueryRecordByID(id string, record *models.Record) error {
 	var event models.Events
 	data := event.Data
 
@@ -153,10 +153,9 @@ func (r *RecordRepoImpl) QueryAllSessionID() ([]string, error) {
 	return listID, nil
 }
 
-func (r *RecordRepoImpl) QueryAll(listID []string, record models.Record) ([]models.Record, error) {
+func (r *RecordRepoImpl) QueryAllRecord(listID []string, record models.Record) ([]models.Record, error) {
 	var records []models.Record
 	var event models.Events
-	data := event.Data
 
 	queryAPI := r.influx.Client.QueryAPI(r.influx.Organization)
 
@@ -172,35 +171,8 @@ func (r *RecordRepoImpl) QueryAll(listID []string, record models.Record) ([]mode
 				values := result.Record().Values()
 
 				record.ID = values["sessionID"].(string)
-				// record.ClientID = values["clientID"].(string)
-
-				record.Client.OS = values["os"].(string)
-				record.Client.UserAgent = values["userAgent"].(string)
-				record.Client.Version = values["version"].(string)
-				record.Client.Browser = values["browser"].(string)
-
-				// record.User.ID = values["userID"].(string)
-				record.User.Email = values["email"].(string)
 				record.User.Name = values["name"].(string)
-
 				record.UpdatedAt = values["updatedAt"].(string)
-
-				timestampString := values["timestamp"].(string)
-				timestamp, err := common.StringToInt64(timestampString)
-				if err != nil {
-					log.Println(err)
-				}
-				event.Timestamp = timestamp
-
-				typeString := values["type"].(string)
-				typeEvent, err := common.StringToInt64(typeString)
-				if err != nil {
-					log.Println(err)
-				}
-				event.Type = typeEvent
-
-				json.Unmarshal([]byte(result.Record().Value().(string)), &data)
-				event.Data = data
 
 				record.Events = append(record.Events, event)
 
@@ -218,4 +190,34 @@ func (r *RecordRepoImpl) QueryAll(listID []string, record models.Record) ([]mode
 	}
 
 	return records, nil
+}
+
+func (r *RecordRepoImpl) QueryEventDataByID(id string, record *models.Record) error {
+	var event models.Events
+	data := event.Data
+
+	queryAPI := r.influx.Client.QueryAPI(r.influx.Organization)
+
+	query := fmt.Sprintf(`from(bucket: "%s")
+	|> range(start: -1d)
+	|> filter(fn: (r) => r["_measurement"] == "%s")
+	|> filter(fn: (r) => r["sessionID"] == "%s")`, r.influx.Bucket, r.influx.Measurement, id)
+
+	result, err := queryAPI.Query(context.Background(), query)
+	if err == nil {
+		for result.Next() {
+			json.Unmarshal([]byte(result.Record().Value().(string)), &data)
+			event.Data = data
+
+			record.Events = append(record.Events, event)
+		}
+		if result.Err() != nil {
+			fmt.Printf("query parsing error: %s\n", result.Err().Error())
+		}
+
+	} else {
+		log.Println(err)
+	}
+
+	return nil
 }
