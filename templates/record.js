@@ -2,6 +2,33 @@ window.recorder = {
 	events: [],
 	rrweb: undefined,
 	runner: undefined,
+	event: {
+		genId(length) {
+			const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+			let result = "";
+			const charactersLength = characters.length;
+			for (let i = 0; i < length; i++) {
+				result += characters.charAt(Math.floor(Math.random() * charactersLength));
+			}
+			return result;
+		},
+		get() {
+			let event = window.sessionStorage.getItem('rrweb');
+			if (event) return JSON.parse(event);
+			event = {
+				session_id: window.recorder.event.genId(64),
+			};
+			window.sessionStorage.setItem('rrweb', JSON.stringify(event));
+			return event;
+		},
+		save(data) {
+			const event = window.recorder.event.get();
+			window.sessionStorage.setItem('rrweb', JSON.stringify(Object.assign({}, event, data)));
+		},
+		clear() {
+			window.sessionStorage.removeItem('rrweb')
+		}
+	},
 	session: {
 		genId(length) {
 			const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -17,8 +44,8 @@ window.recorder = {
 			if (session) return JSON.parse(session);
 			session = {
 				id: window.recorder.session.genId(64),
-				user: { id: window.recorder.session.genId(64) },
-				clientId: 'default'
+				user: { user_id: window.recorder.session.genId(64) },
+				client: { client_id: window.recorder.session.genId(64) },
 			};
 			window.sessionStorage.setItem('rrweb', JSON.stringify(session));
 			return session;
@@ -31,15 +58,29 @@ window.recorder = {
 			window.sessionStorage.removeItem('rrweb')
 		}
 	},
-	setUser: function({ id, email, name }) {
+	
+	start() {
+		window.recorder.runner = setInterval(function save() {
+			const events = window.recorder.event.get();
+			fetch('{{ .URL }}/sessions/event', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(Object.assign({}, { events: window.recorder.events }, events)),
+			});
+			window.recorder.events = []; // cleans-up events for next cycle
+		}, 5 * 1000);
+		console.log('1');
+	},
+	setUser: function({user_id, email, name}) {
 		const session = window.recorder.session.get();
-		session.user = { id, email, name };
+		session.user_id = window.recorder.session.genId(64);
+		session.user = { user_id, email, name };
 		window.recorder.session.save(session)
 		return window.recorder;
 	},
 	setClientId(id) {
 		const session = window.recorder.session.get();
-		session.clientId = id;
+		session.client_id = window.recorder.session.genId(64);
 		window.recorder.session.save(session)
 		return window.recorder;
 	},
@@ -52,10 +93,11 @@ window.recorder = {
 			fetch('{{ .URL }}/sessions', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(Object.assign({}, { events: window.recorder.events }, session)),
+				body: JSON.stringify(Object.assign({}, { events: window.recorder.session }, session)),
 			});
 			window.recorder.events = []; // cleans-up events for next cycle
-		}, 5 * 1000);
+		}, 7 * 1000);
+		console.log('2');
 	},
 	close() {
 		clearInterval();
@@ -74,7 +116,9 @@ new Promise((resolve, reject) => {
 	rrweb.record({
 		emit(event) {
 			window.recorder.events.push(event);
+			console.log('event', event);
 		}
 	});
 	window.recorder.start();
+	
 }).catch(console.err);

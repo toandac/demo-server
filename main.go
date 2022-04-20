@@ -27,9 +27,14 @@ func run(c *cli.Context) error {
 	influx.NewInfluxDB()
 	defer influx.Close()
 
-	handle := handle.RecordHandle{
+	recordHandle := handle.RecordHandle{
 		RecordRepo: repoimpl.NewRecordRepo(influx),
 		URL:        c.String("service-url"),
+	}
+
+	eventHandle := handle.EventHandle{
+		EventRepo: repoimpl.NewEventRepo(influx),
+		URL:       c.String("service-url"),
 	}
 
 	r := chi.NewRouter()
@@ -42,7 +47,8 @@ func run(c *cli.Context) error {
 		}))
 	api := router.API{
 		Chi:          r,
-		RecordHandle: handle,
+		RecordHandle: recordHandle,
+		EventHandle:  eventHandle,
 	}
 	api.SetupRouter()
 
