@@ -32,11 +32,6 @@ func run(c *cli.Context) error {
 		URL:        c.String("service-url"),
 	}
 
-	eventHandle := handle.EventHandle{
-		EventRepo: repoimpl.NewEventRepo(influx),
-		URL:       c.String("service-url"),
-	}
-
 	r := chi.NewRouter()
 	r.Use(
 		middleware.Logger,
@@ -48,7 +43,6 @@ func run(c *cli.Context) error {
 	api := router.API{
 		Chi:          r,
 		RecordHandle: recordHandle,
-		EventHandle:  eventHandle,
 	}
 	api.SetupRouter()
 
