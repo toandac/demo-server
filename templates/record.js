@@ -16,7 +16,7 @@ window.recorder = {
 			let session = window.sessionStorage.getItem('rrweb');
 			if (session) return JSON.parse(session);
 			session = {
-				id: window.recorder.session.genId(64),
+				session_id: window.recorder.session.genId(64),
 				client_id: window.recorder.session.genId(64),
 			};
 			window.sessionStorage.setItem('rrweb', JSON.stringify(session));

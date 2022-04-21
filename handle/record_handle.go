@@ -30,14 +30,15 @@ func (rc *RecordHandle) SaveRecord(w http.ResponseWriter, r *http.Request) {
 
 	var record models.Record
 
-	ua := user_agent.New(r.UserAgent())
-
-	record.ID = req.SessionID
+	record.SessionID = req.SessionID
 	events.Events = append(events.Events, req.Events...)
 
+	// User info
 	record.User.Name = req.User.Name
 	record.User.ID = req.UserID
 
+	// Client info
+	ua := user_agent.New(r.UserAgent())
 	browserName, browserVersion := ua.Browser()
 	record.Client = models.Client{
 		ClientID:  req.ClientID,
@@ -70,10 +71,10 @@ func (rc *RecordHandle) RenderRecordScript(w http.ResponseWriter, r *http.Reques
 }
 
 func (rc *RecordHandle) RenderRecordPlayer(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	sessionID := chi.URLParam(r, "session_id")
 	var events models.Events
 
-	if err := rc.RecordRepo.QueryEventByID(id, &events); err != nil {
+	if err := rc.RecordRepo.QueryEventByID(sessionID, &events); err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -82,11 +83,11 @@ func (rc *RecordHandle) RenderRecordPlayer(w http.ResponseWriter, r *http.Reques
 	tmplPlayerHTML := template.Must(template.ParseFiles("templates/session_by_id.html"))
 
 	err := tmplPlayerHTML.Execute(w, struct {
-		ID     string
-		Events models.Events
+		SessionID string
+		Events    models.Events
 	}{
-		ID:     id,
-		Events: events,
+		SessionID: sessionID,
+		Events:    events,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -132,10 +133,10 @@ func (rc *RecordHandle) RendersRecordsList(w http.ResponseWriter, r *http.Reques
 }
 
 func (rc *RecordHandle) GetAllRecordByID(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	sessionID := chi.URLParam(r, "session_id")
 	var record models.Record
 
-	if err := rc.RecordRepo.QueryRecordByID(id, &record); err != nil {
+	if err := rc.RecordRepo.QueryRecordByID(sessionID, &record); err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -151,10 +152,10 @@ func (rc *RecordHandle) GetAllRecordByID(w http.ResponseWriter, r *http.Request)
 }
 
 func (rc *RecordHandle) GetAllEventByID(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	sessionID := chi.URLParam(r, "session_id")
 	var events models.Events
 
-	if err := rc.RecordRepo.QueryEventByID(id, &events); err != nil {
+	if err := rc.RecordRepo.QueryEventByID(sessionID, &events); err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

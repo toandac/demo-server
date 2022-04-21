@@ -39,7 +39,7 @@ func (r *RecordRepoImpl) Insert(record models.Record, events models.Events) erro
 
 		p := influxdb2.NewPointWithMeasurement(r.influx.Measurement).
 			AddTag("clientID", record.Client.ClientID).
-			AddTag("sessionID", record.ID).
+			AddTag("sessionID", record.SessionID).
 			AddTag("userID", record.User.ID).
 			AddTag("name", record.User.Name).
 			AddTag("browser", record.Client.Browser).
@@ -79,7 +79,7 @@ func (r *RecordRepoImpl) QueryRecordByID(id string, record *models.Record) error
 		for result.Next() {
 			values := result.Record().Values()
 
-			record.ID = values["sessionID"].(string)
+			record.SessionID = values["sessionID"].(string)
 			record.Client.ClientID = values["clientID"].(string)
 
 			record.Client.OS = values["os"].(string)
@@ -106,7 +106,7 @@ func (r *RecordRepoImpl) QueryRecordByID(id string, record *models.Record) error
 			}
 			event.Type = typeEvent
 
-			event.ID = values["sessionID"].(string)
+			event.SessionID = values["sessionID"].(string)
 
 			json.Unmarshal([]byte(result.Record().Value().(string)), &data)
 			event.Data = data
@@ -171,7 +171,7 @@ func (r *RecordRepoImpl) QueryAllRecord(listID []string, record models.Record) (
 			for result.Next() {
 				values := result.Record().Values()
 
-				record.ID = values["sessionID"].(string)
+				record.SessionID = values["sessionID"].(string)
 				record.User.Name = values["name"].(string)
 				record.UpdatedAt = values["updatedAt"].(string)
 
@@ -223,7 +223,7 @@ func (r *RecordRepoImpl) QueryEventByID(id string, events *models.Events) error 
 			}
 			event.Type = typeEvent
 
-			event.ID = values["sessionID"].(string)
+			event.SessionID = values["sessionID"].(string)
 
 			json.Unmarshal([]byte(result.Record().Value().(string)), &data)
 			event.Data = data
