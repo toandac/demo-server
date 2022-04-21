@@ -1,29 +1,32 @@
 package models
 
 type Client struct {
-	ClientID  string `json:"client_id"`
-	UserAgent string `json:"user_agent"`
-	OS        string `json:"os"`
-	Browser   string `json:"browser"`
-	Version   string `json:"version"`
+	ClientID  string `json:"client_id,omitempty"`
+	UserAgent string `json:"user_agent,omitempty"`
+	OS        string `json:"os,omitempty"`
+	Browser   string `json:"browser,omitempty"`
+	Version   string `json:"version,omitempty"`
 }
 
 type Record struct {
-	ID        string   `json:"id"`
-	Events    []Events `json:"events"`
-	User      User     `json:"user"`
-	Client    Client   `json:"client"`
-	UpdatedAt string   `json:"updated_at"`
+	ID        string  `json:"id,omitempty"`
+	Events    []Event `json:"events,omitempty"`
+	User      User    `json:"user,omitempty"`
+	Client    Client  `json:"client,omitempty"`
+	UpdatedAt string  `json:"updated_at,omitempty"`
 }
 
 type Events struct {
-	ID        string      `json:"id"`
-	Type      int64       `json:"type"`
-	Data      interface{} `json:"data"`
-	Timestamp int64       `json:"timestamp"`
+	Events []Event `json:"events,omitempty"`
+}
+type Event struct {
+	ID        string      `json:"id,omitempty"`
+	Type      int64       `json:"type,omitempty"`
+	Data      interface{} `json:"data,omitempty"`
+	Timestamp int64       `json:"timestamp,omitempty"`
 }
 
 type User struct {
-	ID   string `json:"user_id"`
-	Name string `json:"name"`
+	ID   string `json:"user_id,omitempty"`
+	Name string `json:"name,omitempty"`
 }

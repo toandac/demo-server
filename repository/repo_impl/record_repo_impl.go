@@ -26,12 +26,12 @@ func NewRecordRepo(influx *database.InfluxDB) repository.RecordRepo {
 	}
 }
 
-func (r *RecordRepoImpl) Insert(record models.Record) error {
-	for _, elem := range record.Events {
-		timestampStr := strconv.FormatInt(elem.Timestamp, 10)
-		typeStr := strconv.FormatInt(elem.Type, 10)
+func (r *RecordRepoImpl) Insert(record models.Record, events models.Events) error {
+	for _, event := range events.Events {
+		timestampStr := strconv.FormatInt(event.Timestamp, 10)
+		typeStr := strconv.FormatInt(event.Type, 10)
 
-		mJson, errMarshal := json.Marshal(elem.Data)
+		mJson, errMarshal := json.Marshal(event.Data)
 		if errMarshal != nil {
 			log.Println(errMarshal)
 		}
@@ -55,7 +55,7 @@ func (r *RecordRepoImpl) Insert(record models.Record) error {
 		writeAPI := r.influx.Client.WriteAPIBlocking(r.influx.Organization, r.influx.Bucket)
 		err := writeAPI.WritePoint(context.Background(), p)
 		if err != nil {
-			log.Println("Influxdb fails insert: ", err)
+			log.Println("Influxdb fails insert record: ", err)
 			return err
 		}
 	}
@@ -64,7 +64,7 @@ func (r *RecordRepoImpl) Insert(record models.Record) error {
 }
 
 func (r *RecordRepoImpl) QueryRecordByID(id string, record *models.Record) error {
-	var event models.Events
+	var event models.Event
 	data := event.Data
 
 	queryAPI := r.influx.Client.QueryAPI(r.influx.Organization)
@@ -155,7 +155,8 @@ func (r *RecordRepoImpl) QueryAllSessionID() ([]string, error) {
 
 func (r *RecordRepoImpl) QueryAllRecord(listID []string, record models.Record) ([]models.Record, error) {
 	var records []models.Record
-	var event models.Events
+	var events models.Events
+	var event models.Event
 
 	queryAPI := r.influx.Client.QueryAPI(r.influx.Organization)
 
@@ -174,7 +175,7 @@ func (r *RecordRepoImpl) QueryAllRecord(listID []string, record models.Record) (
 				record.User.Name = values["name"].(string)
 				record.UpdatedAt = values["updatedAt"].(string)
 
-				record.Events = append(record.Events, event)
+				events.Events = append(events.Events, event)
 
 			}
 
@@ -192,8 +193,8 @@ func (r *RecordRepoImpl) QueryAllRecord(listID []string, record models.Record) (
 	return records, nil
 }
 
-func (r *RecordRepoImpl) QueryEventDataByID(id string, record *models.Record) error {
-	var event models.Events
+func (r *RecordRepoImpl) QueryEventByID(id string, events *models.Events) error {
+	var event models.Event
 	data := event.Data
 
 	queryAPI := r.influx.Client.QueryAPI(r.influx.Organization)
@@ -206,10 +207,28 @@ func (r *RecordRepoImpl) QueryEventDataByID(id string, record *models.Record) er
 	result, err := queryAPI.Query(context.Background(), query)
 	if err == nil {
 		for result.Next() {
+			values := result.Record().Values()
+
+			timestampString := values["timestamp"].(string)
+			timestamp, err := common.StringToInt64(timestampString)
+			if err != nil {
+				log.Println(err)
+			}
+			event.Timestamp = timestamp
+
+			typeString := values["type"].(string)
+			typeEvent, err := common.StringToInt64(typeString)
+			if err != nil {
+				log.Println(err)
+			}
+			event.Type = typeEvent
+
+			event.ID = values["sessionID"].(string)
+
 			json.Unmarshal([]byte(result.Record().Value().(string)), &data)
 			event.Data = data
 
-			record.Events = append(record.Events, event)
+			events.Events = append(events.Events, event)
 		}
 		if result.Err() != nil {
 			fmt.Printf("query parsing error: %s\n", result.Err().Error())

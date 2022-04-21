@@ -64,7 +64,6 @@ new Promise((resolve, reject) => {
 	document.head.appendChild(script);
 }).then(() => {
 	window.recorder.rrweb = rrweb;
-	// TODO: This should be optimised
 	rrweb.record({
 		emit(event) {
 			window.recorder.events.push(event);

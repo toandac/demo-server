@@ -21,6 +21,7 @@ type RecordHandle struct {
 
 func (rc *RecordHandle) SaveRecord(w http.ResponseWriter, r *http.Request) {
 	var req models.Request
+	var events models.Events
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -32,7 +33,7 @@ func (rc *RecordHandle) SaveRecord(w http.ResponseWriter, r *http.Request) {
 	ua := user_agent.New(r.UserAgent())
 
 	record.ID = req.SessionID
-	record.Events = append(record.Events, req.Events...)
+	events.Events = append(events.Events, req.Events...)
 
 	record.User.Name = req.User.Name
 	record.User.ID = req.UserID
@@ -48,7 +49,7 @@ func (rc *RecordHandle) SaveRecord(w http.ResponseWriter, r *http.Request) {
 
 	record.UpdatedAt = time.Now().Format("02/01/2006, 15:04")
 
-	err := rc.RecordRepo.Insert(record)
+	err := rc.RecordRepo.Insert(record, events)
 	if err != nil {
 		log.Println(err)
 	}
@@ -70,9 +71,9 @@ func (rc *RecordHandle) RenderRecordScript(w http.ResponseWriter, r *http.Reques
 
 func (rc *RecordHandle) RenderRecordPlayer(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	var record models.Record
+	var events models.Events
 
-	if err := rc.RecordRepo.QueryRecordByID(id, &record); err != nil {
+	if err := rc.RecordRepo.QueryEventByID(id, &events); err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -82,10 +83,10 @@ func (rc *RecordHandle) RenderRecordPlayer(w http.ResponseWriter, r *http.Reques
 
 	err := tmplPlayerHTML.Execute(w, struct {
 		ID     string
-		Record models.Record
+		Events models.Events
 	}{
 		ID:     id,
-		Record: record,
+		Events: events,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -141,6 +142,25 @@ func (rc *RecordHandle) GetAllRecordByID(w http.ResponseWriter, r *http.Request)
 	}
 
 	if err := json.NewEncoder(w).Encode(&record); err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (rc *RecordHandle) GetAllEventByID(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var events models.Events
+
+	if err := rc.RecordRepo.QueryEventByID(id, &events); err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(&events); err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
