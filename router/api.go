@@ -1,20 +1,20 @@
 package router
 
 import (
-	"demo-server/handle"
+	"analytics-api/handle"
 
-	"github.com/go-chi/chi"
+	"github.com/gin-gonic/gin"
 )
 
 type API struct {
-	Chi          *chi.Mux
-	RecordHandle handle.RecordHandle
+	Gin           *gin.Engine
+	SessionHandle handle.SessionHandle
 }
 
 func (api *API) SetupRouter() {
-	api.Chi.Get("/", api.RecordHandle.RendersRecordsList)
-	api.Chi.Post("/sessions", api.RecordHandle.SaveRecord)
-	api.Chi.Get("/sessions/{id}", api.RecordHandle.RenderRecordPlayer)
-	api.Chi.Get("/api/v1/sessions/{id}", api.RecordHandle.GetAllRecordByID)
-	api.Chi.Get("/record.js", api.RecordHandle.RenderRecordScript)
+	api.Gin.GET("/", api.SessionHandle.RenderListSession)
+	api.Gin.POST("/session/save", api.SessionHandle.SaveSession)
+	api.Gin.GET("/session/:session_id", api.SessionHandle.RenderSessionPlay)
+	api.Gin.GET("/session/events/:session_id", api.SessionHandle.GetAllEventLimitByID)
+	api.Gin.GET("/api/v1/session/:session_id", api.SessionHandle.GetAllSessionByID)
 }

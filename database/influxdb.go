@@ -2,6 +2,7 @@ package database
 
 import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"go.uber.org/zap"
 )
 
 type InfluxDB struct {
@@ -11,6 +12,8 @@ type InfluxDB struct {
 	Bucket       string
 	Measurement  string
 	Organization string
+
+	Logger *zap.Logger
 }
 
 func (influx *InfluxDB) NewInfluxDB() {

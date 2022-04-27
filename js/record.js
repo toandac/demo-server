@@ -16,9 +16,8 @@ window.recorder = {
 			let session = window.sessionStorage.getItem('rrweb');
 			if (session) return JSON.parse(session);
 			session = {
-				id: window.recorder.session.genId(64),
-				user: { id: window.recorder.session.genId(64) },
-				clientId: 'default'
+				session_id: window.recorder.session.genId(64),
+				client_id: window.recorder.session.genId(64),
 			};
 			window.sessionStorage.setItem('rrweb', JSON.stringify(session));
 			return session;
@@ -31,15 +30,10 @@ window.recorder = {
 			window.sessionStorage.removeItem('rrweb')
 		}
 	},
-	setUser: function({ id, email, name }) {
+	setUser: function({ user_id, user_name }) {
 		const session = window.recorder.session.get();
-		session.user = { id, email, name };
-		window.recorder.session.save(session)
-		return window.recorder;
-	},
-	setClientId(id) {
-		const session = window.recorder.session.get();
-		session.clientId = id;
+		session.user_id = window.recorder.session.genId(64);
+		session.user = { user_id, user_name };
 		window.recorder.session.save(session)
 		return window.recorder;
 	},
@@ -49,7 +43,7 @@ window.recorder = {
 	start() {
 		window.recorder.runner = setInterval(function save() {
 			const session = window.recorder.session.get();
-			fetch('{{ .URL }}/sessions', {
+			fetch('http://localhost:3000/session/save', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(Object.assign({}, { events: window.recorder.events }, session)),
@@ -70,7 +64,6 @@ new Promise((resolve, reject) => {
 	document.head.appendChild(script);
 }).then(() => {
 	window.recorder.rrweb = rrweb;
-	// TODO: This should be optimised
 	rrweb.record({
 		emit(event) {
 			window.recorder.events.push(event);

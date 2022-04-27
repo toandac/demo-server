@@ -17,10 +17,10 @@
 				Server record and replay the web
 			</div>
 			<ul class="list-group mb-5">
-			{{ range .Records }}
-				<a href="/sessions/{{ .ID }}" class="list-group-item list-group-item-action">
+			{{ range .Sessions }}
+				<a href="/session/{{ .SessionID }}" class="list-group-item list-group-item-action">
 					<div class="d-flex w-100 justify-content-between">
-						<h5 class="mb-2 mt-1"><span class="badge bg-secondary">{{ .User.ID }}</span> {{ .User.Name }} </h5>
+						<h5 class="mb-2 mt-1"><span class="badge bg-secondary">{{ .User.UserID }}</span> {{ .User.UserName }} </h5>
 						<small class="text-muted">{{ .UpdatedAt  }}</small>
 					</div>
 				</a>
@@ -32,8 +32,7 @@
 &lt;script type=&quot;application/javascript&quot; src=&quot;{{ .URL }}/record.js&quot; &gt;&lt;/script&gt;
 &lt;script type=&quot;application/javascript&quot;&gt;
 window.recorder
-  .setUser({id: 'USER_ID', email: 'test@test.com', name: 'User' })
-  .setClientId('client-id')
+  .setUser({ user_name: 'User' })
 &lt;/script&gt;
 			</pre>
 		</div>

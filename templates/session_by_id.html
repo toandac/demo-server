@@ -22,30 +22,76 @@
 					</div>
 				</div>
 			</div>
-			<div class="row mb-3">
-				<div class="col">
-					<span class="badge bg-success">{{ .Record.Client.OS }}</span>
-					<span class="badge bg-primary">{{ .Record.Client.Browser }} {{ .Record.Client.Version }}</span>
-				</div>
-			</div>
 		</div>
 		<div class="container mb-3" id="player">
 		</div>
 		<script type="application/javascript" src="https://cdn.jsdelivr.net/npm/rrweb-player@latest/dist/index.js" ></script>
 		<script type="application/javascript">
-			fetch('/api/v1/sessions/{{ .ID }}', {
-				method: 'GET',
-			})
-			.then(res => res.json())
-			.then((res) => {
-				new rrwebPlayer({
-					target: document.getElementById("player"), // customizable root element
-					props: {
-						width: document.getElementById("player").offsetWidth,
-						events: res.events,
-					},
+
+			let replayer = null
+			let isPlay = false
+
+			fetch('/session/events/{{ .SessionID }}')
+				.then(response => response.body)
+				.then(rb => {
+				const reader = rb.getReader();
+
+				return new ReadableStream({
+					start(controller) {
+					// The following function handles each data chunk
+					function push() {
+						// "done" is a Boolean and value a "Uint8Array"
+						reader.read().then( ({done, value}) => {
+						// If there is no more data to read
+						if (done) {
+							console.log('done', done);
+							controller.close();
+							return;
+						}
+						// Get the data and send it to the browser via the controller
+						controller.enqueue(value);
+
+						// Handle rrweb
+						let enc = new TextDecoder("utf-8");
+						let arr = new Uint8Array(value)
+						let results = JSON.parse(enc.decode(arr))
+						console.log(results)
+
+						if (replayer === null) {
+							replayer = new rrwebPlayer({
+								target: document.getElementById("player"), // customizable root element
+								props: {
+									width: document.getElementById("player").offsetWidth,
+									events: results,
+								},
+							});
+						} else {
+							if (results !== null) {
+								for (result of results) {
+									replayer.addEvent(result)
+								}
+							}
+						}
+						if (!isPlay) {
+							replayer.play()
+							isPlay = true
+						}
+
+						push();
+						})
+					}
+					push();
+					}
 				});
-			}).catch(console.error);
+				})
+				.then(stream => {
+				// Respond with our stream
+				return new Response(stream, { headers: { "Content-Type": "text/html" } }).text();
+				})
+				.then(result => {
+					// Do things with result
+					console.log(result);
+				});
 		</script>
 	</body>
 </html>

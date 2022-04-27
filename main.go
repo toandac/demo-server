@@ -1,71 +1,55 @@
 package main
 
 import (
-	"log"
-	"net/http"
+	"analytics-api/database"
+	"analytics-api/handle"
+	"analytics-api/middlewares"
+	repoimpl "analytics-api/repository/repo_impl"
+	"analytics-api/router"
 	"os"
 
-	"demo-server/database"
-	"demo-server/handle"
-	repoimpl "demo-server/repository/repo_impl"
-	"demo-server/router"
-
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
-	"github.com/go-chi/cors"
-	"github.com/urfave/cli/v2"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
-func run(c *cli.Context) error {
+func init() {
+	if err := godotenv.Load(".env"); err != nil {
+		return
+	}
+}
+
+func main() {
+	log, _ := handle.NewLog()
+
 	influx := &database.InfluxDB{
-		URL:          c.String("influx-url"),
-		Token:        c.String("influx-token"),
-		Bucket:       c.String("influx-bucket"),
-		Measurement:  c.String("influx-measurement"),
-		Organization: c.String("influx-organization"),
+		URL:          os.Getenv("INFLUX_URL"),
+		Token:        os.Getenv("INFLUX_TOKEN"),
+		Bucket:       os.Getenv("INFLUX_BUCKET"),
+		Measurement:  os.Getenv("INFLUX_MEASUREMENT"),
+		Organization: os.Getenv("INFLUX_ORGANIZATION"),
+
+		Logger: log,
 	}
 	influx.NewInfluxDB()
 	defer influx.Close()
 
-	handle := handle.RecordHandle{
-		RecordRepo: repoimpl.NewRecordRepo(influx),
-		URL:        c.String("service-url"),
+	sessiondHandle := handle.SessionHandle{
+		SessionRepo: repoimpl.NewSessionRepo(influx, log),
+		Log:         log,
 	}
 
-	r := chi.NewRouter()
-	r.Use(
-		middleware.Logger,
-		cors.Handler(cors.Options{
-			AllowedOrigins: []string{"*"},
-			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-			AllowedHeaders: []string{"Accept", "Content-Type"},
-		}))
+	g := gin.Default()
+
+	g.LoadHTMLGlob("templates/*")
+	g.StaticFile("/record.js", "./js/record.js")
+
+	g.Use(middlewares.CORSMiddleware())
+
 	api := router.API{
-		Chi:          r,
-		RecordHandle: handle,
+		Gin:           g,
+		SessionHandle: sessiondHandle,
 	}
 	api.SetupRouter()
 
-	return http.ListenAndServe(c.String("address")+":"+c.String("port"), r)
-}
-
-func main() {
-	app := &cli.App{
-		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "service-url", Value: "http://localhost:3000"},
-			&cli.StringFlag{Name: "address", Value: "127.0.0.1"},
-			&cli.StringFlag{Name: "port", Value: "3000"},
-
-			&cli.StringFlag{Name: "influx-url", Value: "http://localhost:8086"},
-			&cli.StringFlag{Name: "influx-token", Value: "162L5asvhPfFeE3hp4EWxT8Z6XXkNfzsh4XQ-R6XunRXrnYfJnd_AOlQ-dDyxcmC3OCQm829pbuWf_QNfgJOvA=="},
-			&cli.StringFlag{Name: "influx-bucket", Value: "records"},
-			&cli.StringFlag{Name: "influx-measurement", Value: "test"},
-			&cli.StringFlag{Name: "influx-organization", Value: "tanda_organization"},
-		},
-		Action: run,
-	}
-
-	if err := app.Run(os.Args); err != nil {
-		log.Println(err)
-	}
+	g.Run(":" + os.Getenv("SERVER_PORT"))
 }
